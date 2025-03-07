@@ -55,14 +55,22 @@ FROM alpine:3.20.0 as compiler_dl
 
 RUN apk add --no-cache wget tar xz
 
-ARG COMPILER="https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz"
+ARG TARGETPLATFORM
 ARG COMPILER_TAR=/opt/toolchains/gcc-arm-none-eabi.tar.xz
 ARG COMPILER_DIR=/opt/toolchains/gcc-arm-none-eabi/
-
 RUN mkdir -p $COMPILER_DIR
+
+RUN if [[ "$TARGETPLATFORM" = "linux/arm64" ]]; then \
+    export COMPILER="https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-aarch64-arm-none-eabi.tar.xz" && \
+    wget -O $COMPILER_TAR $COMPILER && \
+    tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1; \
+    elif [[ "$TARGETPLATFORM" = "linux/amd64" ]]; then \
+    export COMPILER="https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" && \
+    wget -O $COMPILER_TAR $COMPILER && \
+    tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1; \
+    fi
+
 # FIXME: add checksum here once I can figure out how to download it...
-ADD ${COMPILER} ${COMPILER_TAR}
-RUN tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1
 
 # build final image
 FROM base as image
@@ -76,9 +84,10 @@ RUN ln -s /opt/python3.8/lib/python3.8 /usr/lib/python3.8
 
 # copy the compiler from the image where we downloaded it
 COPY --from=compiler_dl /opt/toolchains/gcc-arm-none-eabi/ /opt/toolchains/gcc-arm-none-eabi/
-RUN cd /usr/lib/x86_64-linux-gnu && \
+RUN if [[ "$TARGETPLATFORM" = "linux/amd64" ]]; then \
+        cd /usr/lib/x86_64-linux-gnu && \
         ln -s libncursesw.so.6 libncursesw.so.5 && \
-        ln -s libtinfo.so.6 libtinfo.so.5
+        ln -s libtinfo.so.6 libtinfo.so.5; fi
 
 # Get ST-Link drivers, openocd, gdb, and other os-level dependencies
 RUN apt-get update -qq && apt-get install -y \
