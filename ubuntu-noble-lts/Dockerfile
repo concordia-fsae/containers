@@ -51,9 +51,9 @@ RUN cd ${PYTHON_WORKDIR}/python3.8 \
 RUN ${PYTHON_PREFIX}/bin/python3.8 -m pip install --upgrade pip
 
 # download the compiler in a separate image so we don't have to keep redoing it while iterating
-FROM alpine:3.20.0 as compiler_dl
+FROM base as compiler_dl
 
-RUN apk add --no-cache wget tar xz
+RUN apt-get update -qq && apt-get install -y wget tar && rm -rf /var/lib/apt/lists/*
 
 ARG TARGETPLATFORM
 ARG COMPILER_TAR=/opt/toolchains/gcc-arm-none-eabi.tar.xz
