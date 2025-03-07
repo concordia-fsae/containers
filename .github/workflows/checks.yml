@@ -1,0 +1,23 @@
+name: 'Build, Tag, and Push Containers'
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    container: 
+      image: ubuntu-noble-lts
+    steps:
+      - name: Clean
+        uses: AutoModality/action-clean@1077775f5ef0022fc3a9d6f93377921ea3701fa7
+      - name: Pull Branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          show-progress: 'true'
+          submodules: 'recursive'
+      - name: Build Ubuntu Noble LTS
+        run: |
+          docker build ubuntu-noble-lts --platform linux/arm64,linux/amd64
