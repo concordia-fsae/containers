@@ -13,4 +13,4 @@ regex==2024.5.15
 SCons==4.7.0
 tomli==2.0.1
 typing_extensions==4.11.0
-
+schema==0.7.7
