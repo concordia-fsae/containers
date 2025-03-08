@@ -21,8 +21,5 @@ jobs:
       - name: Build Ubuntu Noble LTS
         run: |
           docker buildx build ubuntu-noble-lts --platform linux/arm64,linux/amd64 \
-          -t ghcr.io/concordia-fsae/containers/ubuntu-noble-lts:v1.0.0 \
           -t ghcr.io/concordia-fsae/containers/ubuntu-noble-lts:latest \
-      - name: Push Containers
-        run: |
           docker push -a ghcr.io/concordia-fsae/containers/ubuntu-noble-lts
