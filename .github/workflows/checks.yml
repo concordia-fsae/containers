@@ -5,7 +5,23 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-noble-lts-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean
+        uses: AutoModality/action-clean@1077775f5ef0022fc3a9d6f93377921ea3701fa7
+      - name: Pull Branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          show-progress: 'true'
+          submodules: 'recursive'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Ubuntu Noble LTS amd64
+        run: |
+          docker buildx build ubuntu-noble-lts --platform linux/amd64
+  build-noble-lts-arm64:
     runs-on: ubuntu-latest
     steps:
       - name: Clean
@@ -19,10 +35,5 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Ubuntu Noble LTS arm64
-        if: always()
         run: |
           docker buildx build ubuntu-noble-lts --platform linux/arm64
-      - name: Build Ubuntu Noble LTS amd64
-        if: always()
-        run: |
-          docker buildx build ubuntu-noble-lts --platform linux/amd64
