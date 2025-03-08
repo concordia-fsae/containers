@@ -1,4 +1,4 @@
-FROM ubuntu:noble-20240429 as base
+FROM ubuntu:noble-20240429 AS base
 
 # update packages
 RUN apt-get update -qq && apt-get install -y \
@@ -7,7 +7,7 @@ RUN apt-get update -qq && apt-get install -y \
 
 # build python 3.8.19 from source (required for gdb)
 # do this in a separate image to prevent bloat in the final image
-FROM base as python38
+FROM base AS python38
 
 # install python build dependencies
 RUN apt-get update -qq && apt-get install -y \
@@ -51,32 +51,25 @@ RUN cd ${PYTHON_WORKDIR}/python3.8 \
 RUN ${PYTHON_PREFIX}/bin/python3.8 -m pip install --upgrade pip
 
 # download the compiler in a separate image so we don't have to keep redoing it while iterating
-FROM base as compiler_dl
-
-RUN apt-get update -qq && apt-get install -y wget tar && rm -rf /var/lib/apt/lists/*
+FROM base AS compiler_dl
 
 ARG TARGETPLATFORM
 ARG COMPILER_TAR=/opt/toolchains/gcc-arm-none-eabi.tar.xz
 ARG COMPILER_DIR=/opt/toolchains/gcc-arm-none-eabi/
-RUN mkdir -p $COMPILER_DIR
 
-RUN if [[ "$TARGETPLATFORM" = "linux/arm64" ]]; then \
-    export COMPILER="https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-aarch64-arm-none-eabi.tar.xz" && \
-    wget -O $COMPILER_TAR $COMPILER && \
-    tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1; \
-    elif [[ "$TARGETPLATFORM" = "linux/amd64" ]]; then \
-    export COMPILER="https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" && \
-    wget -O $COMPILER_TAR $COMPILER && \
-    tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1; \
-    fi
-
+RUN apt-get update -qq && apt-get install -y wget tar xz-utils && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p $COMPILER_DIR && if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-arm64-arm-none-eabi.tar.xz?rev=73e10891de3d41e29e95ac2878742b74&hash=6036196A3358CB5AD85FC01DFD0FEC02" ; \
+    else \
+        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" ; \
+    fi && tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1
 # FIXME: add checksum here once I can figure out how to download it...
 
 # build final image
-FROM base as image
+FROM base AS image
 
 # link to containers repo
-LABEL org.opencontainers.image.source https://github.com/concordia-fsae/containers/ubuntu-noble-lts
+LABEL org.opencontainers.image.source=https://github.com/concordia-fsae/containers/ubuntu-noble-lts
 
 # copy the compiled python dir from the other image
 COPY --from=python38 /opt/python3.8/ /opt/python3.8/
@@ -84,7 +77,7 @@ RUN ln -s /opt/python3.8/lib/python3.8 /usr/lib/python3.8
 
 # copy the compiler from the image where we downloaded it
 COPY --from=compiler_dl /opt/toolchains/gcc-arm-none-eabi/ /opt/toolchains/gcc-arm-none-eabi/
-RUN if [[ "$TARGETPLATFORM" = "linux/amd64" ]]; then \
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         cd /usr/lib/x86_64-linux-gnu && \
         ln -s libncursesw.so.6 libncursesw.so.5 && \
         ln -s libtinfo.so.6 libtinfo.so.5; fi
@@ -101,6 +94,7 @@ RUN apt-get update -qq && apt-get install -y \
         openocd=0.12.0-1build2 \
         doxygen \
         graphviz \
+        git \
         && rm -rf /var/lib/apt/lists/*
 
 # noble already has a user/group called "ubuntu" at 1000, so just rename them
@@ -127,4 +121,4 @@ USER builduser
 # define default dir when entering shell to be dir of project 
 WORKDIR /firmware
 
-ENTRYPOINT /opt/entrypoint.sh
+ENTRYPOINT [ "/opt/entrypoint.sh" ]
