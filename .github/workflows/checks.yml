@@ -5,8 +5,11 @@ on:
     branches: [ main ]
 
 jobs:
-  build-noble-lts-amd64:
+  build-noble-lts:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [ amd64, arm64 ]
     steps:
       - name: Clean and Pull
         id: pull
@@ -15,27 +18,13 @@ jobs:
         id: build
         uses: ./.github/actions/build_image/
         with:
-          arch: amd64
-          container: ubuntu-noble-lts
-          tag-prefix: ${{ steps.pull.outputs.short-sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-  build-noble-lts-arm64:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clean and Pull
-        id: pull
-        uses: concordia-fsae/firmware/.github/actions/pull/@master
-      - name: Build Image
-        id: build
-        uses: ./.github/actions/build_image/
-        with:
-          arch: arm64
+          arch: ${{ matrix.arch }}
           container: ubuntu-noble-lts
           tag-prefix: ${{ steps.pull.outputs.short-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
   build-multiarch-manifest:
     runs-on: ubuntu-latest
-    needs: [ build-noble-lts-arm64, build-noble-lts-amd64 ]
+    needs: build-noble-lts
     outputs:
       short-sha: ${{ steps.sha.outputs.short-sha }}
     steps:
