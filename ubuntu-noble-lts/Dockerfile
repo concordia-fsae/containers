@@ -59,9 +59,9 @@ ARG COMPILER_DIR=/opt/toolchains/gcc-arm-none-eabi/
 
 RUN apt-get update -qq && apt-get install -y wget tar xz-utils && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p $COMPILER_DIR && if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-arm64-arm-none-eabi.tar.xz?rev=73e10891de3d41e29e95ac2878742b74&hash=6036196A3358CB5AD85FC01DFD0FEC02" ; \
+        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-aarch64-arm-none-eabi.tar.xz" ; \
     else \
-        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" ; \
+        wget -O $COMPILER_TAR "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz" ; \
     fi && tar -xf $COMPILER_TAR -C $COMPILER_DIR --strip-components 1
 # FIXME: add checksum here once I can figure out how to download it...
 
