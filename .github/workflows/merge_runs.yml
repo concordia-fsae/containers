@@ -1,4 +1,4 @@
-name: 'Deploy Noble LTS to latest version'
+name: 'Deploy Multiarch'
 
 on:
   push:
@@ -8,64 +8,49 @@ env:
   version: v1.0.2
 
 jobs:
-  get-short-sha:
+  get-branch-information:
     runs-on: ubuntu-latest
     outputs: 
       short-sha: ${{ steps.sha.outputs.short-sha }}
+      new-short-sha: ${{ steps.new-sha.outputs.short-sha }}
     steps:
       - name: Get SHA7
         id: sha
-        uses: concordia-fsae/firmware/.github/actions/pull/@master
+        uses: concordia-fsae/firmware/.github/actions/get-short-sha/@master
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Print branch information
+          sha: ${{ github.event.push.before.sha }}
+      - name: Get New SHA7
+        id: new-sha
+        uses: concordia-fsae/firmware/.github/actions/get-short-sha/@master
+        with:
+          sha: ${{ github.event.push.after.sha }}
+  define-matrix:
+    runs-on: ubuntu-latest
+    needs: get-branch-information
+    outputs:
+      version: ${{ steps.define.outputs.version }}
+    steps:
+      - name: Define Matrix
+        id: define
         run: |
-          echo "Merge branch: ${{ github.head_ref }}" && \
-          echo "Current SHA: ${{ github.sha }}" && \
-          echo "PR head: ${{ github.event.pull_request.head.ref }}" && \
-          echo "PR head SHA: ${{ github.event.pull_request.head.sha }}" && \
-          echo "PR head SHA7: ${{ steps.sha.outputs.short-sha }}" && \
-          echo "PR base head: ${{ github.event.pull_request.head.ref }}" && \
-          echo "PR base head SHA: ${{ github.event.pull_request.head.sha }}"
-  retag-latest:
+          echo 'version=["latest", "${{ env.version }}", "${{ needs.get-branch-information.outputs.new-short-sha }}"]' >> $GITHUB_OUTPUT
+  build-multiarch:
     runs-on: ubuntu-latest
-    needs: get-short-sha
+    needs: define-matrix
+    strategy:
+      matrix:
+        version: ${{ fromJSON(needs.define-matrix.outputs.version) }}
     steps:
       - name: Retag
-        uses: concordia-fsae/containers/.github/actions/retag_push_image/@master
+        uses: concordia-fsae/containers/.github/actions/retag_push_image/@main
         with:
           container: ubuntu-noble-lts
-          tag-input: ${{ needs.get-short-sha.outputs.short-sha }}
-          tag-output: latest
+          tag-input: ${{ needs.get-branch-information.outputs.short-sha }}
+          tag-output: ${{ matrix.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
-  retag-version:
-    runs-on: ubuntu-latest
-    needs: get-short-sha
-    steps:
-      - name: Retag
-        uses: concordia-fsae/containers/.github/actions/retag_push_image/@master
-        with:
-          container: ubuntu-noble-lts
-          tag-input: ${{ needs.get-short-sha.outputs.short-sha }}
-          tag-output: ${{ env.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-  build-multiarch-manifest-latest:
-    runs-on: ubuntu-latest
-    needs: retag-latest
-    steps:
       - name: Build Multiarch SHA Manifest
-        uses: concordia-fsae/containers/.github/actions/create_multiarch_manifest/@master
+        uses: concordia-fsae/containers/.github/actions/create_multiarch_manifest/@main
         with:
           container: ubuntu-noble-lts
-          tag: latest
-          token: ${{ secrets.GITHUB_TOKEN }}
-  build-multiarch-manifest-version:
-    runs-on: ubuntu-latest
-    needs: retag-version
-    steps:
-      - name: Build Multiarch SHA Manifest
-        uses: concordia-fsae/containers/.github/actions/create_multiarch_manifest/@master
-        with:
-          container: ubuntu-noble-lts
-          tag: ${{ env.version }}
+          tag: ${{ matrix.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
