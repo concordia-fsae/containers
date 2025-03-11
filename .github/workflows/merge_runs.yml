@@ -18,12 +18,21 @@ jobs:
         uses: concordia-fsae/firmware/.github/actions/pull/@master
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Print branch information
+        run: |
+          echo "Merge branch: ${{ github.head_ref }}" && \
+          echo "Current SHA: ${{ github.sha }}" && \
+          echo "PR head: ${{ github.event.pull_request.head.ref }}" && \
+          echo "PR head SHA: ${{ github.event.pull_request.head.sha }}" && \
+          echo "PR head SHA7: ${{ steps.sha.outputs.short-sha }}" && \
+          echo "PR base head: ${{ github.event.pull_request.head.ref }}" && \
+          echo "PR base head SHA: ${{ github.event.pull_request.head.sha }}"
   retag-latest:
     runs-on: ubuntu-latest
     needs: get-short-sha
     steps:
       - name: Retag
-        uses: ./.github/actions/retag_push_image/
+        uses: concordia-fsae/containers/.github/actions/retag_push_image/@master
         with:
           container: ubuntu-noble-lts
           tag-input: ${{ needs.get-short-sha.outputs.short-sha }}
@@ -34,7 +43,7 @@ jobs:
     needs: get-short-sha
     steps:
       - name: Retag
-        uses: ./.github/actions/retag_push_image/
+        uses: concordia-fsae/containers/.github/actions/retag_push_image/@master
         with:
           container: ubuntu-noble-lts
           tag-input: ${{ needs.get-short-sha.outputs.short-sha }}
@@ -45,7 +54,7 @@ jobs:
     needs: retag-latest
     steps:
       - name: Build Multiarch SHA Manifest
-        uses: ./.github/actions/create_multiarch_manifest/
+        uses: concordia-fsae/containers/.github/actions/create_multiarch_manifest/@master
         with:
           container: ubuntu-noble-lts
           tag: latest
@@ -55,7 +64,7 @@ jobs:
     needs: retag-version
     steps:
       - name: Build Multiarch SHA Manifest
-        uses: ./.github/actions/create_multiarch_manifest/
+        uses: concordia-fsae/containers/.github/actions/create_multiarch_manifest/@master
         with:
           container: ubuntu-noble-lts
           tag: ${{ env.version }}
