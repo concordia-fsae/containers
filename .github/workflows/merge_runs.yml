@@ -17,13 +17,15 @@ jobs:
       - name: Pull Branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           show-progress: 'true'
           submodules: 'recursive'
-      - name: Get SHA7
+      - name: Get Previous Commit SHA7
         id: sha
         run: |
-          echo "short-sha=$(git rev-parse --short HEAD^)" >> $GITHUB_OUTPUT
+          export SHA7=$(echo $(git rev-parse --short HEAD^) | cut -c1-7) && \
+          echo "short-sha=$SHA7" >> $GITHUB_OUTPUT && \
+          echo "Previous SHA: $(git rev-parse --short HEAD^)"
       - name: Get New SHA7
         id: new-sha
         uses: concordia-fsae/firmware/.github/actions/get-short-sha/@master
