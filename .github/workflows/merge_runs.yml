@@ -43,7 +43,7 @@ jobs:
           echo 'version=["latest", "${{ env.version }}", "${{ needs.get-branch-information.outputs.new-short-sha }}"]' >> $GITHUB_OUTPUT
   build-multiarch:
     runs-on: ubuntu-latest
-    needs: define-matrix
+    needs: [ define-matrix, get-branch-information ]
     strategy:
       matrix:
         version: ${{ fromJSON(needs.define-matrix.outputs.version) }}
